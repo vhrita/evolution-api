@@ -1,7 +1,7 @@
 FROM node:24-alpine AS builder
 
 RUN apk update && \
-    apk add --no-cache git ffmpeg wget curl bash openssl
+    apk add --no-cache git ffmpeg wget curl bash openssl dos2unix
 
 LABEL version="2.3.6" description="Evolution API - WhatsApp communication via REST API"
 
