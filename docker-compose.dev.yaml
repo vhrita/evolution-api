@@ -9,27 +9,57 @@ services:
     volumes:
       - evolution_instances:/evolution/instances
     networks:
-      - evolution-net
+      - marcai-network
     env_file:
       - .env
     expose:
       - 8080
+    depends_on:
+      redis:
+        condition: service_started
+      evolution-postgres:
+        condition: service_healthy
 
-  frontend:
-    container_name: evolution_frontend
-    image: evolution/manager:local
-    build: ./evolution-manager-v2
+  redis:
+    container_name: evolution_redis
+    image: redis:latest
     restart: always
     ports:
-      - "3000:80"
+      - "6380:6379"
+    volumes:
+      - evolution_redis:/data
     networks:
-      - evolution-net
+      - marcai-network
+    command: redis-server --appendonly yes
+
+  evolution-postgres:
+    container_name: evolution_postgres
+    image: postgres:15
+    restart: always
+    environment:
+      - POSTGRES_DB=evolution
+      - POSTGRES_USER=evolution
+      - POSTGRES_PASSWORD=evolution
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - marcai-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evolution"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
+  evolution_redis:
+  postgres_data:
   evolution_instances:
 
 
 networks:
-  evolution-net:
-    name: evolution-net
+  marcai-network:
+    name: marcai-network
     driver: bridge
+    external: true
